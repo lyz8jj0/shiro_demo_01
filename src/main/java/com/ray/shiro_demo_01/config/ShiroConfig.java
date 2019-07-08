@@ -2,14 +2,19 @@ package com.ray.shiro_demo_01.config;
 
 
 import at.pollux.thymeleaf.shiro.dialect.ShiroDialect;
+import org.apache.shiro.cache.ehcache.EhCacheManager;
 import org.apache.shiro.spring.LifecycleBeanPostProcessor;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.apache.shiro.mgt.SecurityManager;
+import org.springframework.boot.web.server.ConfigurableWebServerFactory;
+import org.springframework.boot.web.server.ErrorPage;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 
 import java.util.LinkedHashMap;
 
@@ -142,5 +147,31 @@ public class ShiroConfig {
     @Bean
     public ShiroDialect shiroDialect() {
         return new ShiroDialect();
+    }
+
+    //授权缓存管理器
+    @Bean
+    public EhCacheManager getEhCacheManager() {
+        EhCacheManager em = new EhCacheManager();
+        em.setCacheManagerConfigFile("classpath:config/ehcache-shiro.xml");
+        return em;
+    }
+
+    /**
+     * 解决 spring-boot Whitelabel Error Page
+     */
+    @Bean
+    public WebServerFactoryCustomizer<ConfigurableWebServerFactory> webServerFactoryWebServerFactoryCustomizer() {
+        return new WebServerFactoryCustomizer<ConfigurableWebServerFactory>() {
+
+            @Override
+            public void customize(ConfigurableWebServerFactory factory) {
+
+                ErrorPage error404Page = new ErrorPage(HttpStatus.NOT_FOUND, "/404.html");
+                ErrorPage error500Page = new ErrorPage(HttpStatus.NOT_FOUND, "/500.html");
+
+                factory.addErrorPages(error404Page, error500Page);
+            }
+        };
     }
 }

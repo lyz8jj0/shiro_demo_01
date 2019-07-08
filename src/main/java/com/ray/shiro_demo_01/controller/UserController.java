@@ -2,6 +2,7 @@ package com.ray.shiro_demo_01.controller;
 
 import com.ray.shiro_demo_01.entity.UserInfo;
 import com.ray.shiro_demo_01.mapper.UserInfoMapper;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,7 +38,7 @@ public class UserController {
     /**
      * 删除固定写死的用户
      */
-//    @RequiresPermissions("userInfo:del")
+    @RequiresPermissions("userInfo:del")
     @RequestMapping(value = "/del", method = RequestMethod.GET)
     public String del(Model model) {
         userInfoMapper.myDel("bobo");
