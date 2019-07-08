@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ray.shiro_demo_01.mapper.UserInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.ray.shiro_demo_01.entity.UserInfo">
+        <id column="uid" property="uid"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="name" property="name"/>
+        <result column="id_card_num" property="idCardNum"/>
+        <result column="state" property="state"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        uid, username, password, name, id_card_num, state
+    </sql>
+
+    <insert id="myInsert" parameterType="com.ray.shiro_demo_01.entity.UserInfo">
+        INSERT INTO user_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="uid != null">
+                uid,
+            </if>
+            <if test="username != null and username != ''">
+                username,
+            </if>
+            <if test="password != null and password != ''">
+                password,
+            </if>
+            <if test="name != null and name != ''">
+                `name`,
+            </if>
+            <if test="idCardNum != null and idCardNum != ''">
+                id_card_num,
+            </if>
+            <if test="state != null and state != ''">
+                state,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="uid != null">
+                #{uid},
+            </if>
+            <if test="username != null and username != ''">
+                #{username},
+            </if>
+            <if test="password != null and password != ''">
+                #{password},
+            </if>
+            <if test="name != null and name != ''">
+                #{name},
+            </if>
+            <if test="idCardNum != null and idCardNum != ''">
+                #{idCardNum},
+            </if>
+            <if test="state != null and state != ''">
+                #{state},
+            </if>
+        </trim>
+    </insert>
+
+    <delete id="myDel">
+        DELETE FROM user_info WHERE username = #{username}
+    </delete>
+
+
+    <select id="myFindByUserInfoName" resultType="com.ray.shiro_demo_01.entity.UserInfo">
+        SELECT * FROM user_info WHERE username = #{username}
+    </select>
+</mapper>
