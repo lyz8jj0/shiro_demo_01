@@ -14,6 +14,7 @@ import org.apache.shiro.web.servlet.SimpleCookie;
 import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.apache.shiro.mgt.SecurityManager;
+import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.server.ConfigurableWebServerFactory;
 import org.springframework.boot.web.server.ErrorPage;
@@ -34,6 +35,7 @@ public class ShiroConfig {
     /**
      * 开启Shiro的注解(如@RequiresRoles,@RequiresPermissions),需借助SpringAOP扫描使用Shiro注解的类,并在必要时进行安全逻辑验证
      * 配置以下两个bean(DefaultAdvisorAutoProxyCreator(可选)和AuthorizationAttributeSourceAdvisor)即可实现此功能
+     *
      * @return
      */
     @Bean
@@ -50,8 +52,6 @@ public class ShiroConfig {
         advisorAutoProxyCreator.setProxyTargetClass(true);
         return advisorAutoProxyCreator;
     }
-
-
 
 
     /**
@@ -101,10 +101,10 @@ public class ShiroConfig {
         filterChainDefinitionMap.put("/userInfo/view", "perms[userInfo:view]");
 
         //其他资源都需要认证  authc 表示需要认证才能进行访问
-//        filterChainDefinitionMap.put("/**", "authc");
+        filterChainDefinitionMap.put("/**", "authc");
 
         //其他资源都需要认证  authc 表示需要认证才能进行访问  user表示配置记住我或认证通过可以访问的地址
-        filterChainDefinitionMap.put("/**", "user");
+//        filterChainDefinitionMap.put("/**", "user");
 
         shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
         return shiroFilterFactoryBean;
@@ -112,23 +112,23 @@ public class ShiroConfig {
 
     /**
      * 配置核心安全事务管理器
+     * 注意：securityManager()改变，setRealm(shiroRealm())改变
      *
-     * @param shiroRealm
      * @return
      */
     @Bean(name = "securityManager")
-    public SecurityManager securityManager(@Qualifier("shiroRealm") ShiroRealm shiroRealm) {
+    public SecurityManager securityManager() {
 
         DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager();
 
         // 设置自定义realm
-        securityManager.setRealm(shiroRealm);
+        securityManager.setRealm(shiroRealm());
 
         //配置记住我 参考博客：
         securityManager.setRememberMeManager(rememberMeManager());
 
         //配置 redis缓存管理器 参考博客：
-        //securityManager.setCacheManager(getEhCacheManager());
+        securityManager.setCacheManager(getEhCacheManager());
 
         //配置自定义session管理，使用redis 参考博客：
         //securityManager.setSessionManager(sessionManager());
@@ -154,6 +154,17 @@ public class ShiroConfig {
     @Bean
     public ShiroRealm shiroRealm() {
         ShiroRealm shiroRealm = new ShiroRealm();
+//        shiroRealm.setCachingEnabled(true);
+
+        // 启动身份验证缓存，即缓存AuthenticationInfo信息，默认false
+        shiroRealm.setAuthenticationCachingEnabled(true);
+        //缓存AuthenticationInfo信息的缓存名称 在ehcache-shiro.xml中有对应缓存的配置
+        shiroRealm.setAuthenticationCacheName("authenticationCache");
+
+        //启用授权缓存，即缓存AuthorizationInfo信息，默认false
+        shiroRealm.setAuthorizationCachingEnabled(true);
+        //缓存AuthorizationInfo信息的缓存名称  在ehcache-shiro.xml中有对应缓存的配置
+        shiroRealm.setAuthorizationCacheName("authorizationCache");
         return shiroRealm;
     }
 
@@ -235,4 +246,19 @@ public class ShiroConfig {
         formAuthenticationFilter.setRememberMeParam("rememberMe");
         return formAuthenticationFilter;
     }
+
+    /**
+     * 让某个实例的某个方法的返回值注入为Bean的实例
+     * Spring静态注入
+     *
+     * @return
+     */
+    @Bean
+    public MethodInvokingFactoryBean methodInvokingFactoryBean() {
+        MethodInvokingFactoryBean factoryBean = new MethodInvokingFactoryBean();
+        factoryBean.setStaticMethod("org.apache.shiro.SecurityUtils.setSecurityManager");
+        factoryBean.setArguments(new Object[]{securityManager()});
+        return factoryBean;
+    }
+
 }

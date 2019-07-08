@@ -100,7 +100,6 @@ public class ShiroRealm extends AuthorizingRealm {
 
         //  获取用户角色
         Set<SysRole> roles = this.sysRoleMapper.myFindSysRolesByUserInfoId(user.getUid());
-
         // 添加角色
         SimpleAuthorizationInfo authorizationInfo = new SimpleAuthorizationInfo();
         for (SysRole role : roles) {
@@ -110,11 +109,58 @@ public class ShiroRealm extends AuthorizingRealm {
         // 获取用户权限
         Set<SysPermission> permissions = this.sysPermissionMapper.myFindSysPermissionsBySysRoleId(roles);
         // 添加权限
-        for (SysPermission permission :
-                permissions) {
+        for (SysPermission permission : permissions) {
             authorizationInfo.addStringPermission(permission.getPermission());
         }
-
         return authorizationInfo;
+    }
+
+    /**
+     * 重写方法,清除当前用户的的 授权缓存
+     * @param principals
+     */
+    @Override
+    protected void clearCachedAuthorizationInfo(PrincipalCollection principals) {
+        super.clearCachedAuthorizationInfo(principals);
+    }
+
+    /**
+     * 重写方法，清除当前用户的 认证缓存
+     * @param principals
+     */
+    @Override
+    protected void clearCachedAuthenticationInfo(PrincipalCollection principals) {
+        super.clearCachedAuthenticationInfo(principals);
+    }
+
+    /**
+     * 重写方法，清除缓存
+     * @param principals
+     */
+    @Override
+    protected void clearCache(PrincipalCollection principals) {
+        super.clearCache(principals);
+    }
+
+    /**
+     * 自定义方法：清除所有 授权缓存
+     */
+    public void clearAllCachedAuthorizationInfo() {
+        getAuthorizationCache().clear();
+    }
+
+    /**
+     * 自定义方法：清除所有 认证缓存
+     */
+    public void clearAllCachedAuthenticationInfo() {
+        getAuthenticationCache().clear();
+    }
+
+    /**
+     * 自定义方法：清除所有的  认证缓存  和 授权缓存
+     */
+    public void clearAllCache() {
+        clearAllCachedAuthenticationInfo();
+        clearAllCachedAuthorizationInfo();
     }
 }
