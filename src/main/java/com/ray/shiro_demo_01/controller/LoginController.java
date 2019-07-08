@@ -50,14 +50,14 @@ public class LoginController {
      * 用户登录
      */
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public String loginUser(HttpServletRequest request, String username, String password, Model model, HttpSession session) {
+    public String loginUser(HttpServletRequest request, String username, String password, boolean rememberMe, Model model, HttpSession session) {
 
         //对密码进行加密
         //password=new SimpleHash("md5", password, ByteSource.Util.bytes(username.toLowerCase() + "shiro"),2).toHex();
         //如果有点击  记住我
-        //UsernamePasswordToken usernamePasswordToken=new UsernamePasswordToken(username,password,remeberMe);
+        UsernamePasswordToken usernamePasswordToken=new UsernamePasswordToken(username,password,rememberMe);
 
-        UsernamePasswordToken usernamePasswordToken = new UsernamePasswordToken(username, password);
+//        UsernamePasswordToken usernamePasswordToken = new UsernamePasswordToken(username, password);
         Subject subject = SecurityUtils.getSubject();
 
         try {

@@ -3,12 +3,18 @@ package com.ray.shiro_demo_01.config;
 
 import at.pollux.thymeleaf.shiro.dialect.ShiroDialect;
 import org.apache.shiro.cache.ehcache.EhCacheManager;
+import org.apache.shiro.codec.Base64;
 import org.apache.shiro.spring.LifecycleBeanPostProcessor;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
+import org.apache.shiro.web.filter.authc.FormAuthenticationFilter;
+import org.apache.shiro.web.mgt.CookieRememberMeManager;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
+import org.apache.shiro.web.servlet.SimpleCookie;
+import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.apache.shiro.mgt.SecurityManager;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.server.ConfigurableWebServerFactory;
 import org.springframework.boot.web.server.ErrorPage;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
@@ -26,9 +32,9 @@ import java.util.LinkedHashMap;
 @Configuration
 public class ShiroConfig {
     /**
-     * 开启shiro 注解模式
-     * 可以在controller中的方法前添加注解
-     * 如 @RequiresPermissions("userInfo:add")
+     * 开启Shiro的注解(如@RequiresRoles,@RequiresPermissions),需借助SpringAOP扫描使用Shiro注解的类,并在必要时进行安全逻辑验证
+     * 配置以下两个bean(DefaultAdvisorAutoProxyCreator(可选)和AuthorizationAttributeSourceAdvisor)即可实现此功能
+     * @return
      */
     @Bean
     public AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor(@Qualifier("securityManager") SecurityManager securityManager) {
@@ -36,6 +42,17 @@ public class ShiroConfig {
         authorizationAttributeSourceAdvisor.setSecurityManager(securityManager);
         return authorizationAttributeSourceAdvisor;
     }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DefaultAdvisorAutoProxyCreator advisorAutoProxyCreator() {
+        DefaultAdvisorAutoProxyCreator advisorAutoProxyCreator = new DefaultAdvisorAutoProxyCreator();
+        advisorAutoProxyCreator.setProxyTargetClass(true);
+        return advisorAutoProxyCreator;
+    }
+
+
+
 
     /**
      * ShiroFilterFactoryBean 处理拦截资源文件问题。
@@ -84,10 +101,12 @@ public class ShiroConfig {
         filterChainDefinitionMap.put("/userInfo/view", "perms[userInfo:view]");
 
         //其他资源都需要认证  authc 表示需要认证才能进行访问
-        filterChainDefinitionMap.put("/**", "authc");
+//        filterChainDefinitionMap.put("/**", "authc");
+
+        //其他资源都需要认证  authc 表示需要认证才能进行访问  user表示配置记住我或认证通过可以访问的地址
+        filterChainDefinitionMap.put("/**", "user");
 
         shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
-
         return shiroFilterFactoryBean;
     }
 
@@ -106,7 +125,7 @@ public class ShiroConfig {
         securityManager.setRealm(shiroRealm);
 
         //配置记住我 参考博客：
-        //securityManager.setRememberMeManager(rememberMeManager());
+        securityManager.setRememberMeManager(rememberMeManager());
 
         //配置 redis缓存管理器 参考博客：
         //securityManager.setCacheManager(getEhCacheManager());
@@ -163,15 +182,57 @@ public class ShiroConfig {
     @Bean
     public WebServerFactoryCustomizer<ConfigurableWebServerFactory> webServerFactoryWebServerFactoryCustomizer() {
         return new WebServerFactoryCustomizer<ConfigurableWebServerFactory>() {
-
             @Override
             public void customize(ConfigurableWebServerFactory factory) {
-
                 ErrorPage error404Page = new ErrorPage(HttpStatus.NOT_FOUND, "/404.html");
                 ErrorPage error500Page = new ErrorPage(HttpStatus.NOT_FOUND, "/500.html");
-
                 factory.addErrorPages(error404Page, error500Page);
             }
         };
+    }
+
+    /**
+     * 记住我cookie
+     * cookie对象;会话Cookie模板 ,默认为: JSESSIONID 问题: 与SERVLET容器名冲突,重新定义为sid或rememberMe，自定义
+     */
+    @Bean
+    public SimpleCookie rememberMeCookie() {
+        // 这个参数是cookie的名称，对应前端的checkbox的name = rememberMe
+        SimpleCookie simpleCookie = new SimpleCookie("rememberMe");
+
+        //setcookie的httponly属性如果设为true的话，会增加对xss防护的安全系数。
+        //设为true后，只能通过http访问，javascript无法访问
+        //防止xss读取cookie
+        simpleCookie.setHttpOnly(true);
+        simpleCookie.setPath("/");
+
+        // 记住我cookie生效时间30天,单位秒
+        simpleCookie.setMaxAge(2592000);
+        return simpleCookie;
+    }
+
+    /**
+     * 记住我管理器
+     * cookie管理对象;记住我功能,rememberMe管理器
+     */
+    @Bean
+    public CookieRememberMeManager rememberMeManager() {
+        CookieRememberMeManager cookieRememberMeManager = new CookieRememberMeManager();
+        cookieRememberMeManager.setCookie(rememberMeCookie());
+        //rememberMe cookie加密的密钥 建议每个项目都不一样 默认AES算法 密钥长度(128 256 512 位)
+        cookieRememberMeManager.setCipherKey(Base64.decode("4AvVhmFLUs0KTA3Kprsdag=="));
+        return cookieRememberMeManager;
+    }
+
+    /**
+     * 记住我Filter
+     * FormAuthenticationFilter 过滤器 过滤记住我
+     */
+    @Bean
+    public FormAuthenticationFilter formAuthenticationFilter() {
+        FormAuthenticationFilter formAuthenticationFilter = new FormAuthenticationFilter();
+        //对应前端的checkbox的name = rememberMe
+        formAuthenticationFilter.setRememberMeParam("rememberMe");
+        return formAuthenticationFilter;
     }
 }
