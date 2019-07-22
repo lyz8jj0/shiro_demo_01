@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 
+import javax.servlet.Filter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -85,17 +86,24 @@ public class ShiroConfig {
         // 未授权跳转的链接
         shiroFilterFactoryBean.setUnauthorizedUrl("/unauthorized");
 
+//        //自定义拦截器限制并发人数,参考博客：
+//        LinkedHashMap<String, Filter> filtersMap = new LinkedHashMap<>();
+//        //限制同一帐号同时在线的个数
+//        filtersMap.put("kickout", kickoutSessionControlFilter());
+//        shiroFilterFactoryBean.setFilters(filtersMap);
+
+
         //自定义拦截器限制并发人数,参考博客：
-        //LinkedHashMap<String, Filter> filtersMap = new LinkedHashMap<>();
+        LinkedHashMap<String, Filter> filtersMap = new LinkedHashMap<>();
         //限制同一帐号同时在线的个数
-        //filtersMap.put("kickout", kickoutSessionControlFilter());
-        //shiroFilterFactoryBean.setFilters(filtersMap);
+        filtersMap.put("kickout", kickoutSessionControlFilter());
+        shiroFilterFactoryBean.setFilters(filtersMap);
 
         // 配置访问权限 必须是LinkedHashMap，因为它必须保证有序
         // 过滤链定义，从上向下顺序执行，一般将 /**放在最为下边 一定要注意顺序,否则就不好使了
         LinkedHashMap<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
         //配置不登录可以访问的资源，anon 表示资源都可以匿名访问
-        filterChainDefinitionMap.put("/login", "anon");
+        filterChainDefinitionMap.put("/login", "kickout,anon");
         filterChainDefinitionMap.put("/", "anon");
         filterChainDefinitionMap.put("/css/**", "anon");
         filterChainDefinitionMap.put("/js/**", "anon");
@@ -113,7 +121,7 @@ public class ShiroConfig {
 //        filterChainDefinitionMap.put("/**", "authc");
 
         //其他资源都需要认证  authc 表示需要认证才能进行访问  user表示配置记住我或认证通过可以访问的地址
-        filterChainDefinitionMap.put("/**", "user");
+        filterChainDefinitionMap.put("/**", "kickout,user");
 
         shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
         return shiroFilterFactoryBean;
@@ -344,7 +352,7 @@ public class ShiroConfig {
         sessionManager.setCacheManager(getEhCacheManager());
 
         // 全局会话超时时间（单位毫秒 1:1000），默认30分钟 暂时设置为10秒，用于测试
-        sessionManager.setGlobalSessionTimeout(10000);
+//        sessionManager.setGlobalSessionTimeout(10000);
         // 是否开启删除无效的session对象，默认为true
         sessionManager.setDeleteInvalidSessions(true);
         // 是否开启定时调度器进行检测过期session，默认为true
@@ -359,4 +367,24 @@ public class ShiroConfig {
         return sessionManager;
     }
 
+    /**
+     * 并发登录控制
+     */
+    @Bean
+    public KickoutSessionControlFilter kickoutSessionControlFilter() {
+
+        KickoutSessionControlFilter kickoutSessionControlFilter = new KickoutSessionControlFilter();
+        // 用于根据会话ID，获取会话进行踢出操作
+        kickoutSessionControlFilter.setSessionManager(sessionManager());
+        // 使用cacheManager获取响应的cache来缓存用户登录的会话，用于保存用户-会话之间的关系
+        kickoutSessionControlFilter.setCacheManager(getEhCacheManager());
+        // 是否踢出后来登录的，默认是false，即后者登录的用户踢出前者登录的用户
+        kickoutSessionControlFilter.setKickoutAfter(false);
+        // 同一个用户最大的会话数，默认1；比如2的意思是同一个用户允许最多同时两人登录
+        kickoutSessionControlFilter.setMaxSession(1);
+        // 被踢出后重定向到的地址
+        kickoutSessionControlFilter.setKickoutUrl("/login?kickout=1");
+
+        return kickoutSessionControlFilter;
+    }
 }

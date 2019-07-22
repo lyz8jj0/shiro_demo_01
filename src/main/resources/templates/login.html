@@ -4,6 +4,7 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3"
       xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
 <head>
     <meta charset="UTF-8">
     <title>login.html</title>
@@ -17,5 +18,55 @@
     <input type="checkbox" name="rememberMe"/>记住我<br>
     <input type="submit" value="提交">
 </form>
+<!--jQuery-->
+<!--<script type="text/javascript" th:src="@{/webjars/jquery/1.11.1/dist/jquery.min.js}"></script>-->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js" type="text/javascript"></script>
+<!--踢出信息提示-->
+<script type="text/javascript">
+    function kickout() {
+        var href = location.href;
+        if (href.indexOf("kickout") > 0) {
+            alert("您的账号在另一台设备上登录,如非本人操作，请立即修改密码！")
+        }
+    }
+
+    window.onload = kickout();
+</script>
+
+<!--天气插件-->
+<script>(function (T, h, i, n, k, P, a, g, e) {
+    g = function () {
+        P = h.createElement(i);
+        a = h.getElementsByTagName(i)[0];
+        P.src = k;
+        P.charset = "utf-8";
+        P.async = 1;
+        a.parentNode.insertBefore(P, a)
+    };
+    T["ThinkPageWeatherWidgetObject"] = n;
+    T[n] || (T[n] = function () {
+        (T[n].q = T[n].q || []).push(arguments)
+    });
+    T[n].l = +new Date();
+    if (T.attachEvent) {
+        T.attachEvent("onload", g)
+    } else {
+        T.addEventListener("load", g, false)
+    }
+}(window, document, "script", "tpwidget", "//widget.seniverse.com/widget/chameleon.js"))</script>
+<script>tpwidget("init", {
+    "flavor": "bubble",
+    "location": "WX4FBXXFKE4F",
+    "geolocation": "enabled",
+    "position": "top-right",
+    "margin": "10px 10px",
+    "language": "auto",
+    "unit": "c",
+    "theme": "chameleon",
+    "uid": "UF1A210FD4",
+    "hash": "02dcc45ebf45f018750514679ce7e2a9"
+});
+tpwidget("show");
+</script>
 </body>
 </html>
