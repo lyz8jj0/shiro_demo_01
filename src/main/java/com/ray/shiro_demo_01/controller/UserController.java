@@ -72,7 +72,7 @@ public class UserController {
     public String addPermission(Model model) {
 
         // 在sys_role_permission 表中  将 删除的权限 关联到 ray 用户所在的角色
-        SysRolePermission sysRolePermission = new SysRolePermission().setRoleId(3).setPermissionId(4);
+        SysRolePermission sysRolePermission = new SysRolePermission().setRoleId(3).setPermissionId(3);
         sysRolePermissionService.save(sysRolePermission);
 
         // 添加成功之后 清除缓存
@@ -92,7 +92,7 @@ public class UserController {
     public String delPermission(Model model) {
 
         // 在sys_role_permission 表中  将 删除的权限 关联到 ray 用户所在的角色
-        sysRolePermissionService.remove(new QueryWrapper<SysRolePermission>().eq("role_id", 3).eq("permission_id", 4));
+        sysRolePermissionService.remove(new QueryWrapper<SysRolePermission>().eq("role_id", 3).eq("permission_id", 3));
 
         // 删除成功之后 清除缓存
         DefaultWebSecurityManager securityManager = (DefaultWebSecurityManager) SecurityUtils.getSecurityManager();

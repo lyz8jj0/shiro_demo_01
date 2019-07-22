@@ -101,10 +101,10 @@ public class ShiroConfig {
         filterChainDefinitionMap.put("/userInfo/view", "perms[userInfo:view]");
 
         //其他资源都需要认证  authc 表示需要认证才能进行访问
-        filterChainDefinitionMap.put("/**", "authc");
+//        filterChainDefinitionMap.put("/**", "authc");
 
         //其他资源都需要认证  authc 表示需要认证才能进行访问  user表示配置记住我或认证通过可以访问的地址
-//        filterChainDefinitionMap.put("/**", "user");
+        filterChainDefinitionMap.put("/**", "user");
 
         shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
         return shiroFilterFactoryBean;
@@ -227,7 +227,7 @@ public class ShiroConfig {
      * cookie管理对象;记住我功能,rememberMe管理器
      */
     @Bean
-    public CookieRememberMeManager rememberMeManager() {
+        public CookieRememberMeManager rememberMeManager() {
         CookieRememberMeManager cookieRememberMeManager = new CookieRememberMeManager();
         cookieRememberMeManager.setCookie(rememberMeCookie());
         //rememberMe cookie加密的密钥 建议每个项目都不一样 默认AES算法 密钥长度(128 256 512 位)

@@ -54,6 +54,7 @@ public class LoginController {
 
         //对密码进行加密
         //password=new SimpleHash("md5", password, ByteSource.Util.bytes(username.toLowerCase() + "shiro"),2).toHex();
+
         //如果有点击  记住我
         UsernamePasswordToken usernamePasswordToken=new UsernamePasswordToken(username,password,rememberMe);
 
